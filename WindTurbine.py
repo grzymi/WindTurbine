@@ -92,5 +92,5 @@ class WindTurbine:
             w_k[i] = np.sqrt(pow(self.velocities()[1],2)+pow(n,2))
         return w_k
     
-    def blade_width(self):
-        s_k = 
+    #def blade_width(self):
+        #s_k = 
