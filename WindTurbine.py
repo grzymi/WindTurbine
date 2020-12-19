@@ -3,7 +3,7 @@ import numpy as np
 class WindTurbine:
     def __init__(self, radius, air_velocity,
                  pressure=101325, temperature=15, time=1, rpm=20,
-                 no_of_elem=15, Cd=0.2, Cl=0.8):
+                 no_of_elem=15, Cd=0.2, Cl=0.8, height=[10,100]):
         self.radius = radius
         self.pressure = pressure
         self.temperature = temperature
@@ -13,13 +13,20 @@ class WindTurbine:
         self.no_of_elem = no_of_elem
         self.Cd = Cd
         self.Cl = Cl
+        self.height = height
    
     def velocities(self):
         #v0-before turbine, v1=in turbine, v2-after turbine
-        v0 = self.air_velocity
+        v0 = self.velocity_profile
         v2 = (v0/3)
         v1 = (v0+v2)/2
         return (v0, v1, v2)
+
+    def velocity_profile(self):
+        #Profil wiatru. Dodac wykladnik jakosci powierzchni do danych wejsciowych.
+        #Jako lista lub slownik. Dane sa w notebooku, ktory robilem wczesniej.
+        v = self.air_velocity*pow((self.height[0]/self.height[1]),self.alfa)
+        return v
     
     def area(self):
         A = np.pi*(pow(self.radius, 2))
