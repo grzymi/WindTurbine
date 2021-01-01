@@ -3,7 +3,7 @@ import numpy as np
 class WindTurbine:
     def __init__(self, radius, air_velocity,
                  pressure=101325, temperature=15, time=1, rpm=20,
-                 no_of_elem=15, Cd=0.2, Cl=0.8, height=[10,100]):
+                 no_of_elem=15, NACA='0009', height=[10,100], aoa = 0):
         self.radius = radius
         self.pressure = pressure
         self.temperature = temperature
@@ -11,9 +11,9 @@ class WindTurbine:
         self.rpm = rpm
         self.air_velocity = air_velocity
         self.no_of_elem = no_of_elem
-        self.Cd = Cd
-        self.Cl = Cl
+        self.NACA = NACA
         self.height = height
+        self.aoa = aoa
    
     def velocities(self):
         #v0-before turbine, v1=in turbine, v2-after turbine
@@ -25,7 +25,7 @@ class WindTurbine:
     def velocity_profile(self):
         #Profil wiatru. Dodac wykladnik jakosci powierzchni do danych wejsciowych.
         #Jako lista lub slownik. Dane sa w notebooku, ktory robilem wczesniej.
-        v = self.air_velocity*pow((self.height[0]/self.height[1]),self.alfa)
+        v = self.air_velocity*pow((self.height[0]/self.height[1]),self.aoa)
         return v
     
     def area(self):
@@ -98,6 +98,17 @@ class WindTurbine:
         for i,n in enumerate(self.circum_vel()):
             w_k[i] = np.sqrt(pow(self.velocities()[1],2)+pow(n,2))
         return w_k
+
+    def cd_cl(self):
+        naca = np.loadtxt('./NACA_values/NACA_'+str(self.NACA)+'.txt', skiprows=12, usecols=(0,1,2))
+        x=np.where(naca==self.aoa)
+        Cd = naca[x[0][0]][2]
+        Cl = naca[x[0][0]][1]
+        return (Cd, Cl)
     
     #def blade_width(self):
         #s_k = 
+
+
+WT = WindTurbine(10, 10, aoa=5)
+print (WT.cd_cl())
