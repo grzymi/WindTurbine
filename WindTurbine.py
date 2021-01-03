@@ -102,23 +102,30 @@ class WindTurbine:
 
     def cd_cl(self):
         naca = np.loadtxt('./NACA_values/NACA_'+str(self.NACA)+'.txt', skiprows=12, usecols=(0,1,2))
-        x=np.where(naca==self.aoa)
+        angles = naca[0:-1,0]
+        indices = np.abs(np.subtract.outer(angles, self.aoa)).argmin(0)
+        x=np.where(naca==naca[indices])
         Cd = naca[x[0][0]][2]
         Cl = naca[x[0][0]][1]
+        #Przyjęto współczynniki dla kąta natarcia równego... - problem z tłumaczeniem
+        print ('Cd and Cl was taken for AoA equal', naca[indices][0])
         return (Cd, Cl)
     
     def blade_width(self):
         s_k = np.zeros(self.no_of_elem)
         for i in range(self.no_of_elem):
-            licznik = 4*np.pi*self.radius_l()[i]*self.velocities()[1]*(self.velocities()[0]-self.velocities()[2])
+            licznik = 4*np.pi*self.velocities()[1]*(self.velocities()[0]-self.velocities()[2])
+            #licznik = 4*np.pi*self.radius_l()[i]*self.velocities()[1]*(self.velocities()[0]-self.velocities()[2])
             mianownik = self.lenght()*self.relative_vel()[i]*(self.circum_vel()[i]*self.cd_cl()[0]+self.velocities()[0]*self.cd_cl()[1])
             s_k[i] = licznik/mianownik
         return s_k
 
 
-WT = WindTurbine(10, 10, aoa=5)
-print ('szerokosc', WT.blade_width(), '/n')
-print ('u_k', WT.circum_vel())
-print ('promien', WT.radius_l())
-print ('w_k', WT.relative_vel())
-print (WT.velocities())
+WT = WindTurbine(10, 10, aoa=0.25, NACA='0012')
+# print ('szerokosc', WT.blade_width())
+# print ('u_k', WT.circum_vel())
+# print ('promien', WT.radius_l())
+# print ('w_k', WT.relative_vel())
+# print (WT.velocities())
+print (WT.cd_cl())
+# print (WT.lenght())
