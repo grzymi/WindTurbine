@@ -17,7 +17,8 @@ class WindTurbine:
    
     def velocities(self):
         #v0-before turbine, v1=in turbine, v2-after turbine
-        v0 = self.velocity_profile
+        v0 = self.air_velocity
+        #v0 = self.velocity_profile
         v2 = (v0/3)
         v1 = (v0+v2)/2
         return (v0, v1, v2)
@@ -106,9 +107,18 @@ class WindTurbine:
         Cl = naca[x[0][0]][1]
         return (Cd, Cl)
     
-    #def blade_width(self):
-        #s_k = 
+    def blade_width(self):
+        s_k = np.zeros(self.no_of_elem)
+        for i in range(self.no_of_elem):
+            licznik = 4*np.pi*self.radius_l()[i]*self.velocities()[1]*(self.velocities()[0]-self.velocities()[2])
+            mianownik = self.lenght()*self.relative_vel()[i]*(self.circum_vel()[i]*self.cd_cl()[0]+self.velocities()[0]*self.cd_cl()[1])
+            s_k[i] = licznik/mianownik
+        return s_k
 
 
 WT = WindTurbine(10, 10, aoa=5)
-print (WT.cd_cl())
+print ('szerokosc', WT.blade_width(), '/n')
+print ('u_k', WT.circum_vel())
+print ('promien', WT.radius_l())
+print ('w_k', WT.relative_vel())
+print (WT.velocities())
