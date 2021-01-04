@@ -3,7 +3,8 @@ import numpy as np
 class WindTurbine:
     def __init__(self, radius, air_velocity,
                  pressure=101325, temperature=15, time=1, rpm=20,
-                 no_of_elem=15, NACA='0009', height=[10,100], aoa = 0):
+                 no_of_elem=15, NACA='0009', height=[10,100], aoa = 0, 
+                 roughness_class=0):
         self.radius = radius
         self.pressure = pressure
         self.temperature = temperature
@@ -14,11 +15,12 @@ class WindTurbine:
         self.NACA = NACA
         self.height = height
         self.aoa = aoa
+        self.roughness_class = roughness_class
    
     def velocities(self):
         #v0-before turbine, v1=in turbine, v2-after turbine
-        v0 = self.air_velocity
-        #v0 = self.velocity_profile
+        #v0 = self.air_velocity
+        v0 = self.velocity_profile
         v2 = (v0/3)
         v1 = (v0+v2)/2
         return (v0, v1, v2)
@@ -26,7 +28,12 @@ class WindTurbine:
     def velocity_profile(self):
         #Profil wiatru. Dodac wykladnik jakosci powierzchni do danych wejsciowych.
         #Jako lista lub slownik. Dane sa w notebooku, ktory robilem wczesniej.
-        v = self.air_velocity*pow((self.height[0]/self.height[1]),self.aoa)
+        r_class = np.array([0, 0.5, 1., 1.5, 2., 2.5, 3., 3.5, 4])
+        exponent_value = np.array([0.0815, 0.1, 0.1377, 0.1499, 0.165, 0.1786, 0.2139, 0.2677, 0.305])
+        indices = np.abs(np.subtract.outer(r_class, self.roughness_class)).argmin(0)
+        print (indices)
+        print (exponent_value[indices])
+        v = self.air_velocity*pow((self.height[1]/self.height[0]),exponent_value[indices])
         return v
     
     def area(self):
@@ -116,19 +123,22 @@ class WindTurbine:
     def blade_width(self):
         #Cały moduł do sprawdzenia pod kątem poprawności matematycznej
         s_k = np.zeros(self.no_of_elem)
+        Cd = self.cd_cl()[0]
+        Cl = self.cd_cl()[1]
         for i in range(self.no_of_elem):
             licznik = 4*np.pi*self.velocities()[1]*(self.velocities()[0]-self.velocities()[2])
             #licznik = 4*np.pi*self.radius_l()[i]*self.velocities()[1]*(self.velocities()[0]-self.velocities()[2])
-            mianownik = self.lenght()*self.relative_vel()[i]*(self.circum_vel()[i]*self.cd_cl()[0]+self.velocities()[0]*self.cd_cl()[1])
+            mianownik = self.lenght()*self.relative_vel()[i]*(self.circum_vel()[i]*Cd+self.velocities()[0]*Cl)
             s_k[i] = licznik/mianownik
         return s_k
 
 
-WT = WindTurbine(10, 10, aoa=0.2, NACA='0012')
-# print ('szerokosc', WT.blade_width())
+WT = WindTurbine(50, 10, aoa=0.2, NACA='0009', no_of_elem=30, roughness_class=5)
+#print ('szerokosc', WT.blade_width())
 # print ('u_k', WT.circum_vel())
-# print ('promien', WT.radius_l())
+#print ('promien', WT.radius_l())
 # print ('w_k', WT.relative_vel())
 # print (WT.velocities())
-print (WT.cd_cl())
-# print (WT.lenght())
+#print (WT.cd_cl())
+#print (WT.lenght())
+print (WT.velocity_profile())
