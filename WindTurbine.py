@@ -104,7 +104,9 @@ class WindTurbine:
         naca = np.loadtxt('./NACA_values/NACA_'+str(self.NACA)+'.txt', skiprows=12, usecols=(0,1,2))
         angles = naca[0:-1,0]
         indices = np.abs(np.subtract.outer(angles, self.aoa)).argmin(0)
-        x=np.where(naca==naca[indices])
+        #print (indices)
+        x=np.where(naca==naca[indices][0])
+        #print (x)
         Cd = naca[x[0][0]][2]
         Cl = naca[x[0][0]][1]
         #Przyjęto współczynniki dla kąta natarcia równego... - problem z tłumaczeniem
@@ -112,6 +114,7 @@ class WindTurbine:
         return (Cd, Cl)
     
     def blade_width(self):
+        #Cały moduł do sprawdzenia pod kątem poprawności matematycznej
         s_k = np.zeros(self.no_of_elem)
         for i in range(self.no_of_elem):
             licznik = 4*np.pi*self.velocities()[1]*(self.velocities()[0]-self.velocities()[2])
@@ -121,7 +124,7 @@ class WindTurbine:
         return s_k
 
 
-WT = WindTurbine(10, 10, aoa=0.25, NACA='0012')
+WT = WindTurbine(10, 10, aoa=0.2, NACA='0012')
 # print ('szerokosc', WT.blade_width())
 # print ('u_k', WT.circum_vel())
 # print ('promien', WT.radius_l())
