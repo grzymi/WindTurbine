@@ -146,6 +146,12 @@ class WindTurbine:
             aerodynamic_force[i] = np.sqrt(pow(lift_force[i],2)+pow(drag_force[i],2))
         return (lift_force, drag_force, aerodynamic_force)
 
+    def axial_force(self):
+        ax_f = np.zeros(self.no_of_elem)
+        for i,n in enumerate(self.circum_vel()):
+            ax_f[i] = ((n/self.relative_vel()[i])*self.forces()[0][i])+((self.velocities()[0]/self.relative_vel()[i])*self.forces()[1][i])
+        return ax_f
+
 
 WT = WindTurbine(50, 12, aoa=10, NACA='0009', no_of_elem=30, roughness_class=1)
 print ('szerokosc', WT.blade_width())
@@ -160,3 +166,4 @@ print (WT.velocity_profile())
 print (WT.forces()[0])
 print (WT.forces()[1])
 print (WT.forces()[2])
+print (WT.axial_force())
