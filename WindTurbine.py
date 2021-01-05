@@ -20,7 +20,7 @@ class WindTurbine:
     def velocities(self):
         #v0-before turbine, v1=in turbine, v2-after turbine
         #v0 = self.air_velocity
-        v0 = self.velocity_profile
+        v0 = self.velocity_profile()
         v2 = (v0/3)
         v1 = (v0+v2)/2
         return (v0, v1, v2)
@@ -31,10 +31,13 @@ class WindTurbine:
         r_class = np.array([0, 0.5, 1., 1.5, 2., 2.5, 3., 3.5, 4])
         exponent_value = np.array([0.0815, 0.1, 0.1377, 0.1499, 0.165, 0.1786, 0.2139, 0.2677, 0.305])
         indices = np.abs(np.subtract.outer(r_class, self.roughness_class)).argmin(0)
-        print (indices)
-        print (exponent_value[indices])
+        #print (indices)
+        #print (exponent_value[indices])
         v = self.air_velocity*pow((self.height[1]/self.height[0]),exponent_value[indices])
-        return v
+        if v>25:
+            print ('Wind speed is to high. The turbine has stopped.')
+        else:
+            return v
     
     def area(self):
         A = np.pi*(pow(self.radius, 2))
@@ -117,7 +120,8 @@ class WindTurbine:
         Cd = naca[x[0][0]][2]
         Cl = naca[x[0][0]][1]
         #Przyjęto współczynniki dla kąta natarcia równego... - problem z tłumaczeniem
-        print ('Cd and Cl was taken for AoA equal', naca[indices][0])
+        #Zrobić tak, aby wyświetlało sie tylko raz przy wywołaniu!!!
+        #print ('Cd and Cl was taken for AoA equal', naca[indices][0])
         return (Cd, Cl)
     
     def blade_width(self):
@@ -132,13 +136,27 @@ class WindTurbine:
             s_k[i] = licznik/mianownik
         return s_k
 
+    def forces(self):
+        lift_force = np.zeros(self.no_of_elem)
+        drag_force = np.zeros(self.no_of_elem)
+        aerodynamic_force = np.zeros(self.no_of_elem)
+        for i,n in enumerate (self.blade_width()):
+            lift_force[i] = self.cd_cl()[1]*self.density()*n*(self.relative_vel()[i]/2)
+            drag_force[i] = self.cd_cl()[0]*self.density()*n*(self.relative_vel()[i]/2)
+            aerodynamic_force[i] = np.sqrt(pow(lift_force[i],2)+pow(drag_force[i],2))
+        return (lift_force, drag_force, aerodynamic_force)
 
-WT = WindTurbine(50, 10, aoa=0.2, NACA='0009', no_of_elem=30, roughness_class=5)
-#print ('szerokosc', WT.blade_width())
+
+WT = WindTurbine(50, 12, aoa=10, NACA='0009', no_of_elem=30, roughness_class=1)
+print ('szerokosc', WT.blade_width())
 # print ('u_k', WT.circum_vel())
 #print ('promien', WT.radius_l())
 # print ('w_k', WT.relative_vel())
-# print (WT.velocities())
+print (WT.velocities())
 #print (WT.cd_cl())
 #print (WT.lenght())
+print (WT.rot_speed(), WT.hsd())
 print (WT.velocity_profile())
+print (WT.forces()[0])
+print (WT.forces()[1])
+print (WT.forces()[2])
