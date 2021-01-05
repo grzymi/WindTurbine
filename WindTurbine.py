@@ -36,6 +36,8 @@ class WindTurbine:
         v = self.air_velocity*pow((self.height[1]/self.height[0]),exponent_value[indices])
         if v>25:
             print ('Wind speed is to high. The turbine has stopped.')
+            v = 0
+            return v
         else:
             return v
     
@@ -65,7 +67,10 @@ class WindTurbine:
     
     def hsd(self):
         #high-speed discriminant
-        hisd = (self.rot_speed()*self.radius)/self.velocities()[1]
+        if self.velocities()[1] == 0:
+            hisd = 0
+        else:
+            hisd = (self.rot_speed()*self.radius)/self.velocities()[1]
         return hisd
     
     def characteristic(self):
@@ -122,7 +127,7 @@ class WindTurbine:
         #Przyjęto współczynniki dla kąta natarcia równego... - problem z tłumaczeniem
         #Zrobić tak, aby wyświetlało sie tylko raz przy wywołaniu!!!
         #print ('Cd and Cl was taken for AoA equal', naca[indices][0])
-        return (Cd, Cl)
+        return [Cd, Cl]
     
     def blade_width(self):
         #Cały moduł do sprawdzenia pod kątem poprawności matematycznej
@@ -130,40 +135,68 @@ class WindTurbine:
         Cd = self.cd_cl()[0]
         Cl = self.cd_cl()[1]
         for i in range(self.no_of_elem):
-            licznik = 4*np.pi*self.velocities()[1]*(self.velocities()[0]-self.velocities()[2])
-            #licznik = 4*np.pi*self.radius_l()[i]*self.velocities()[1]*(self.velocities()[0]-self.velocities()[2])
+            #licznik = 4*np.pi*self.velocities()[1]*(self.velocities()[0]-self.velocities()[2])
+            licznik = 4*np.pi*self.radius_l()[i]*self.velocities()[1]*(self.velocities()[0]-self.velocities()[2])
             mianownik = self.lenght()*self.relative_vel()[i]*(self.circum_vel()[i]*Cd+self.velocities()[0]*Cl)
             s_k[i] = licznik/mianownik
         return s_k
 
     def forces(self):
+        #Podstawowe siły działające na łopatę
         lift_force = np.zeros(self.no_of_elem)
         drag_force = np.zeros(self.no_of_elem)
         aerodynamic_force = np.zeros(self.no_of_elem)
         for i,n in enumerate (self.blade_width()):
-            lift_force[i] = self.cd_cl()[1]*self.density()*n*(self.relative_vel()[i]/2)
-            drag_force[i] = self.cd_cl()[0]*self.density()*n*(self.relative_vel()[i]/2)
+            lift_force[i] = self.cd_cl()[1]*self.density()*n*self.lenght()*(self.relative_vel()[i]/2)
+            drag_force[i] = self.cd_cl()[0]*self.density()*n*self.lenght()*(self.relative_vel()[i]/2)
             aerodynamic_force[i] = np.sqrt(pow(lift_force[i],2)+pow(drag_force[i],2))
-        return (lift_force, drag_force, aerodynamic_force)
+        return [lift_force, drag_force, aerodynamic_force]
 
     def axial_force(self):
-        ax_f = np.zeros(self.no_of_elem)
+        #Wynikowe siły działające na łopatę
+        #Siła osiowa
+        axial_f = np.zeros(self.no_of_elem)
+        #Siła hamująca
+        breaking_f = np.zeros(self.no_of_elem)
+        #Siła napędzająca
+        driving_f = np.zeros(self.no_of_elem)
+        #Siła wynikowa, powodująca obrót turbiny
+        rotation_f = np.zeros(self.no_of_elem)
         for i,n in enumerate(self.circum_vel()):
-            ax_f[i] = ((n/self.relative_vel()[i])*self.forces()[0][i])+((self.velocities()[0]/self.relative_vel()[i])*self.forces()[1][i])
-        return ax_f
+            axial_f[i] = ((n/self.relative_vel()[i])*self.forces()[0][i])+((self.velocities()[0]/self.relative_vel()[i])*self.forces()[1][i])
+            breaking_f[i] = ((n/self.relative_vel()[i])*self.forces()[1][i])
+            driving_f[i] = ((self.velocities()[0]/self.relative_vel()[i])*self.forces()[0][i])
+            rotation_f[i] = driving_f[i]-breaking_f[i]
+        return [axial_f, breaking_f, driving_f, rotation_f]
 
 
-WT = WindTurbine(50, 12, aoa=10, NACA='0009', no_of_elem=30, roughness_class=1)
-print ('szerokosc', WT.blade_width())
+import time
+import matplotlib.pyplot as plt
+
+WT = WindTurbine(50, 10, aoa=10, NACA='0009', no_of_elem=30, roughness_class=5)
+# print ('szerokosc', WT.blade_width())
 # print ('u_k', WT.circum_vel())
-#print ('promien', WT.radius_l())
+# print ('promien', WT.radius_l())
 # print ('w_k', WT.relative_vel())
-print (WT.velocities())
-#print (WT.cd_cl())
-#print (WT.lenght())
-print (WT.rot_speed(), WT.hsd())
-print (WT.velocity_profile())
-print (WT.forces()[0])
-print (WT.forces()[1])
-print (WT.forces()[2])
-print (WT.axial_force())
+# print (WT.velocities())
+# print (WT.cd_cl())
+# print (WT.lenght())
+# print (WT.rot_speed(), WT.hsd())
+# print (WT.velocity_profile())
+# print (WT.forces()[0])
+# print (WT.forces()[1])
+# print (WT.forces()[2])
+# start = time.time()
+# print (WT.axial_force())
+# end = time.time()
+plt.plot(WT.radius_l(), WT.axial_force()[0], label = 'osiowa')
+plt.plot(WT.radius_l(), WT.axial_force()[1], label = 'break')
+plt.plot(WT.radius_l(), WT.axial_force()[2], label = 'napedowa')
+plt.plot(WT.radius_l(), WT.axial_force()[3], label = 'obrot')
+# plt.plot(WT.radius_l(), WT.blade_width())
+#plt.plot(WT.radius_l(), WT.forces()[0], label = 'Lift')
+#plt.plot(WT.radius_l(), WT.forces()[1], label = 'Drag')
+#plt.plot(WT.radius_l(), WT.forces()[2], label = 'Aerodynamic')
+plt.legend()
+plt.show()
+# print(end-start)
