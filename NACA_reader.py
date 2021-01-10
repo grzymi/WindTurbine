@@ -11,19 +11,20 @@ no_rows = table.find_all('tr')
 
 cd_cl_data = np.zeros((len(no_rows), 3)) #Tworzy tablicę o żądanym rozmiarze
 #print (cd_cl_data)
-#for i, row in enumerate(no_rows):
-for row in no_rows:
+for i, row in enumerate(no_rows):
+#for row in no_rows:
     data = row.find_all('td') #znalezienie kolumn
-    #for i in data:
+    if len(data)==0:
+        continue   #for i in data:
     #    print(i.getText())
-    # cd_cl_data[i][0] = data[0].getText()
-    # cd_cl_data[i][1] = data[1].getText()
-    # cd_cl_data[i][2] = data[2].getText()
-    print(data)
+    cd_cl_data[i][0] = data[0].getText()
+    cd_cl_data[i][1] = data[1].getText()
+    cd_cl_data[i][2] = data[2].getText()
+    #print(data)
     #print(len(data))
     #print(data[0])
 
-#print(cd_cl_data)
+print(cd_cl_data)
 
 def cd_cl(NACA, angle):
     naca = np.loadtxt('./NACA_values/NACA_'+str(NACA)+'.txt', skiprows=12, usecols=(0,1,2))
