@@ -187,8 +187,8 @@ class WindTurbine:
 
 import time
 
-podzial_lopaty = np.array([15,20])#,25,30,35,40,45,50,55,60])
-predkosci = np.array([5,6,7])#,8,9,10,11,12,13])
+podzial_lopaty = np.array([15,20,25,30,35,40,45,50,55,60])
+predkosci = np.array([10,11,12,13])
 moc_wiatru = np.zeros((len(predkosci),len(podzial_lopaty)))
 moc_turbiny = np.zeros((len(predkosci),len(podzial_lopaty)))
 czas_dzialania = np.zeros((len(predkosci),len(podzial_lopaty)))
@@ -197,16 +197,23 @@ for i,n in enumerate(predkosci):
     for j,m in enumerate(podzial_lopaty):
         start_inner = time.time()
         turbina = WindTurbine(50, n, aoa=10, NACA='0009', no_of_elem=m, roughness_class=2, rpm=15)
+        #print (turbina.power_theoretic()/1000000)
+        #print (turbina.power()/1000000)
         moc_wiatru[i][j] = round((turbina.power_theoretic()/1000000),2)
         moc_turbiny[i][j] = round((turbina.power()/1000000),2)
         end_inner = time.time()
         czas_dzialania[i][j] = round(end_inner-start_inner,2)
-        print ('\tInner iteration', j+1, 'is finished with time', round(end_inner-start_inner,2), 's')
+        print ('\tInner iteration', j+1, 'is finished with time', round(end_inner-start_inner,2), 's', j,m)
     end_outer = time.time()
-    print ('Outer iteration',i+1,'is finished within',round(end_outer-start_outer,2),'s')
+    print ('Outer iteration',i+1,'is finished within',round(end_outer-start_outer,2),'s',i,n)
 
 sprawnosc = (moc_turbiny/moc_wiatru)
 print (moc_turbiny)
 print (moc_wiatru)
 print (sprawnosc)
 print (czas_dzialania)
+
+
+# tt = WindTurbine(50, 5, aoa=10, NACA='0009', no_of_elem=15, roughness_class=2, rpm=15)
+# print (tt.power_theoretic()/1000000)
+# print (tt.power()/1000000)
