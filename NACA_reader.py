@@ -32,7 +32,7 @@ def cd_cl(NACA, angle):
     x=np.where(cd_cl_data==cd_cl_data[indices][0])
     Cd = cd_cl_data[x[0][0]][2]
     Cl = cd_cl_data[x[0][0]][1]
-    return (Cd, Cl)
+    return [Cd, Cl]
 
 print (cd_cl('http://airfoiltools.com/polar/details?polar=xf-naca0006-il-1000000', 8))
 

@@ -4,7 +4,7 @@ class WindTurbine:
     def __init__(self, radius, air_velocity,
                  pressure=101325, temperature=15, time=1, rpm=20,
                  no_of_elem=15, NACA='0009', height=[10,100], aoa = 0, 
-                 roughness_class=0):
+                 roughness_class=0, eta_a=0.95, eta_m=0.95, n_blades=3):
         self.radius = radius
         self.pressure = pressure
         self.temperature = temperature
@@ -16,6 +16,9 @@ class WindTurbine:
         self.height = height
         self.aoa = aoa
         self.roughness_class = roughness_class
+        self.eta_a = eta_a
+        self.eta_m = eta_m
+        self.n_blades = n_blades
    
     def velocities(self):
         #v0-before turbine, v1=in turbine, v2-after turbine
@@ -137,7 +140,7 @@ class WindTurbine:
         for i in range(self.no_of_elem):
             #licznik = 4*np.pi*self.velocities()[1]*(self.velocities()[0]-self.velocities()[2])
             licznik = 4*np.pi*self.radius_l()[i]*self.velocities()[1]*(self.velocities()[0]-self.velocities()[2])
-            mianownik = self.lenght()*self.relative_vel()[i]*(self.circum_vel()[i]*Cd+self.velocities()[0]*Cl)
+            mianownik = self.n_blades*self.relative_vel()[i]*(self.circum_vel()[i]*Cd+self.velocities()[0]*Cl)
             s_k[i] = licznik/mianownik
         return s_k
 
@@ -169,34 +172,41 @@ class WindTurbine:
             rotation_f[i] = driving_f[i]-breaking_f[i]
         return [axial_f, breaking_f, driving_f, rotation_f]
 
+    def power(self):
+        betz = 0.593
+        suma = 0
+        predkosc = self.circum_vel()
+        sila = self.axial_force()[3]
+        for i in range(self.no_of_elem):
+            suma = suma + (sila[i]*predkosc[i])
+        power = betz*self.hsd()*self.eta_m*self.n_blades*suma
+        return power
+
+
+
 
 import time
-import matplotlib.pyplot as plt
 
-WT = WindTurbine(50, 10, aoa=10, NACA='0009', no_of_elem=30, roughness_class=5)
-# print ('szerokosc', WT.blade_width())
-# print ('u_k', WT.circum_vel())
-# print ('promien', WT.radius_l())
-# print ('w_k', WT.relative_vel())
-# print (WT.velocities())
-# print (WT.cd_cl())
-# print (WT.lenght())
-# print (WT.rot_speed(), WT.hsd())
-# print (WT.velocity_profile())
-# print (WT.forces()[0])
-# print (WT.forces()[1])
-# print (WT.forces()[2])
-start = time.time()
-print (WT.axial_force())
-end = time.time()
-# plt.plot(WT.radius_l(), WT.axial_force()[0], label = 'osiowa')
-# plt.plot(WT.radius_l(), WT.axial_force()[1], label = 'break')
-# plt.plot(WT.radius_l(), WT.axial_force()[2], label = 'napedowa')
-# plt.plot(WT.radius_l(), WT.axial_force()[3], label = 'obrot')
-# plt.plot(WT.radius_l(), WT.blade_width())
-#plt.plot(WT.radius_l(), WT.forces()[0], label = 'Lift')
-#plt.plot(WT.radius_l(), WT.forces()[1], label = 'Drag')
-#plt.plot(WT.radius_l(), WT.forces()[2], label = 'Aerodynamic')
-# plt.legend()
-# plt.show()
-print(end-start)
+podzial_lopaty = np.array([15,20])#,25,30,35,40,45,50,55,60])
+predkosci = np.array([5,6,7])#,8,9,10,11,12,13])
+moc_wiatru = np.zeros((len(predkosci),len(podzial_lopaty)))
+moc_turbiny = np.zeros((len(predkosci),len(podzial_lopaty)))
+czas_dzialania = np.zeros((len(predkosci),len(podzial_lopaty)))
+for i,n in enumerate(predkosci):
+    start_outer = time.time()
+    for j,m in enumerate(podzial_lopaty):
+        start_inner = time.time()
+        turbina = WindTurbine(50, n, aoa=10, NACA='0009', no_of_elem=m, roughness_class=2, rpm=15)
+        moc_wiatru[i][j] = round((turbina.power_theoretic()/1000000),2)
+        moc_turbiny[i][j] = round((turbina.power()/1000000),2)
+        end_inner = time.time()
+        czas_dzialania[i][j] = round(end_inner-start_inner,2)
+        print ('\tInner iteration', j+1, 'is finished with time', round(end_inner-start_inner,2), 's')
+    end_outer = time.time()
+    print ('Outer iteration',i+1,'is finished within',round(end_outer-start_outer,2),'s')
+
+sprawnosc = (moc_turbiny/moc_wiatru)
+print (moc_turbiny)
+print (moc_wiatru)
+print (sprawnosc)
+print (czas_dzialania)
