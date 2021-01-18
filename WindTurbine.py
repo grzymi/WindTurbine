@@ -137,21 +137,25 @@ class WindTurbine:
         s_k = np.zeros(self.no_of_elem)
         Cd = self.cd_cl()[0]
         Cl = self.cd_cl()[1]
+        radius = self.radius_l()
+        rel_vel = self.relative_vel()
         for i in range(self.no_of_elem):
             #licznik = 4*np.pi*self.velocities()[1]*(self.velocities()[0]-self.velocities()[2])
-            licznik = 4*np.pi*self.radius_l()[i]*self.velocities()[1]*(self.velocities()[0]-self.velocities()[2])
-            mianownik = self.n_blades*self.relative_vel()[i]*(self.circum_vel()[i]*Cd+self.velocities()[0]*Cl)
+            licznik = 4*np.pi*radius[i]*self.velocities()[1]*(self.velocities()[0]-self.velocities()[2])
+            mianownik = self.n_blades*rel_vel[i]*(self.circum_vel()[i]*Cd+self.velocities()[0]*Cl)
             s_k[i] = licznik/mianownik
         return s_k
 
     def forces(self):
         #Podstawowe siły działające na łopatę
+        Cd = self.cd_cl()[0]
+        Cl = self.cd_cl()[1]        
         lift_force = np.zeros(self.no_of_elem)
         drag_force = np.zeros(self.no_of_elem)
         aerodynamic_force = np.zeros(self.no_of_elem)
         for i,n in enumerate (self.blade_width()):
-            lift_force[i] = self.cd_cl()[1]*self.density()*n*self.lenght()*(self.relative_vel()[i]/2)
-            drag_force[i] = self.cd_cl()[0]*self.density()*n*self.lenght()*(self.relative_vel()[i]/2)
+            lift_force[i] = Cl*self.density()*n*self.lenght()*(self.relative_vel()[i]/2)
+            drag_force[i] = Cd*self.density()*n*self.lenght()*(self.relative_vel()[i]/2)
             aerodynamic_force[i] = np.sqrt(pow(lift_force[i],2)+pow(drag_force[i],2))
         return [lift_force, drag_force, aerodynamic_force]
 
@@ -165,21 +169,24 @@ class WindTurbine:
         driving_f = np.zeros(self.no_of_elem)
         #Siła wynikowa, powodująca obrót turbiny
         rotation_f = np.zeros(self.no_of_elem)
+        #wywolanie funkcji
+        rel_vel = self.relative_vel()
+        forces = self.forces()
         for i,n in enumerate(self.circum_vel()):
-            axial_f[i] = ((n/self.relative_vel()[i])*self.forces()[0][i])+((self.velocities()[0]/self.relative_vel()[i])*self.forces()[1][i])
-            breaking_f[i] = ((n/self.relative_vel()[i])*self.forces()[1][i])
-            driving_f[i] = ((self.velocities()[0]/self.relative_vel()[i])*self.forces()[0][i])
+            axial_f[i] = ((n/rel_vel[i])*forces[0][i])+((self.velocities()[0]/rel_vel[i])*forces[1][i])
+            breaking_f[i] = ((n/rel_vel[i])*forces[1][i])
+            driving_f[i] = ((self.velocities()[0]/rel_vel[i])*forces[0][i])
             rotation_f[i] = driving_f[i]-breaking_f[i]
         return [axial_f, breaking_f, driving_f, rotation_f]
 
     def power(self):
-        betz = 0.593
         suma = 0
         predkosc = self.circum_vel()
         sila = self.axial_force()[3]
         for i in range(self.no_of_elem):
             suma = suma + (sila[i]*predkosc[i])
-        power = betz*self.hsd()*self.eta_m*self.n_blades*suma
+        #power = self.characteristic()*self.eta_m*self.n_blades*suma
+        power = self.eta_m*self.n_blades*suma
         return power
 
 
@@ -188,7 +195,7 @@ class WindTurbine:
 import time
 
 podzial_lopaty = np.array([15,20,25,30,35,40,45,50,55,60])
-predkosci = np.array([10,11,12,13])
+predkosci = np.array([5,6,7,8,9,10,11,12,13])
 moc_wiatru = np.zeros((len(predkosci),len(podzial_lopaty)))
 moc_turbiny = np.zeros((len(predkosci),len(podzial_lopaty)))
 czas_dzialania = np.zeros((len(predkosci),len(podzial_lopaty)))
@@ -196,7 +203,7 @@ for i,n in enumerate(predkosci):
     start_outer = time.time()
     for j,m in enumerate(podzial_lopaty):
         start_inner = time.time()
-        turbina = WindTurbine(50, n, aoa=10, NACA='0009', no_of_elem=m, roughness_class=2, rpm=15)
+        turbina = WindTurbine(50, n, aoa=2, NACA='6412', no_of_elem=m, roughness_class=2, rpm=15)
         #print (turbina.power_theoretic()/1000000)
         #print (turbina.power()/1000000)
         moc_wiatru[i][j] = round((turbina.power_theoretic()/1000000),2)
@@ -211,7 +218,7 @@ sprawnosc = (moc_turbiny/moc_wiatru)
 print (moc_turbiny)
 print (moc_wiatru)
 print (sprawnosc)
-print (czas_dzialania)
+#print (czas_dzialania)
 
 
 # tt = WindTurbine(50, 5, aoa=10, NACA='0009', no_of_elem=15, roughness_class=2, rpm=15)
