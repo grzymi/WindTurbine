@@ -194,16 +194,17 @@ class WindTurbine:
 
 import time
 
-podzial_lopaty = np.array([15,20,25,30,35,40,45,50,55,60])
+podzial_lopaty = np.array([15,20,25,30,35,40,45,50,55,60,100])
+katy = np.arange(-7,7.25,0.25)
 predkosci = np.array([5,6,7,8,9,10,11,12,13])
-moc_wiatru = np.zeros((len(predkosci),len(podzial_lopaty)))
-moc_turbiny = np.zeros((len(predkosci),len(podzial_lopaty)))
-czas_dzialania = np.zeros((len(predkosci),len(podzial_lopaty)))
+moc_wiatru = np.zeros((len(predkosci),len(katy)))
+moc_turbiny = np.zeros((len(predkosci),len(katy)))
+czas_dzialania = np.zeros((len(predkosci),len(katy)))
 for i,n in enumerate(predkosci):
     start_outer = time.time()
-    for j,m in enumerate(podzial_lopaty):
+    for j,m in enumerate(katy):
         start_inner = time.time()
-        turbina = WindTurbine(50, n, aoa=2, NACA='6412', no_of_elem=m, roughness_class=2, rpm=15)
+        turbina = WindTurbine(50, n, aoa=m, NACA='0012', no_of_elem=60, roughness_class=2, rpm=15)
         #print (turbina.power_theoretic()/1000000)
         #print (turbina.power()/1000000)
         moc_wiatru[i][j] = round((turbina.power_theoretic()/1000000),2)
@@ -224,3 +225,25 @@ print (sprawnosc)
 # tt = WindTurbine(50, 5, aoa=10, NACA='0009', no_of_elem=15, roughness_class=2, rpm=15)
 # print (tt.power_theoretic()/1000000)
 # print (tt.power()/1000000)
+
+from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.pyplot as plt
+from matplotlib import cm
+from matplotlib.ticker import LinearLocator, FormatStrFormatter
+
+fig = plt.figure()
+ax = fig.gca(projection='3d')
+
+X, Y = np.meshgrid(katy, predkosci)
+
+surf = ax.plot_surface(X, Y, sprawnosc, cmap=cm.coolwarm,
+                       linewidth=0, antialiased=False)
+
+ax.set_zlim(-1.01, 1.01)
+ax.zaxis.set_major_locator(LinearLocator(10))
+ax.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
+
+# Add a color bar which maps values to colors.
+fig.colorbar(surf, shrink=0.5, aspect=5)
+
+plt.show()
